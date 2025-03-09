@@ -5,15 +5,15 @@ from datasets import load_dataset
 import random
 from flask import Flask, request, jsonify
 
-# 🔥 Load the actual GPT-2 model and tokenizer
+#  Load the actual GPT-2 model and tokenizer
 model_name = "gpt2"  # Can change to 'gpt2-medium' if you got more VRAM
 tokenizer = GPT2Tokenizer.from_pretrained(model_name)
 model = GPT2LMHeadModel.from_pretrained(model_name)
 
-# 🔥 Load dataset
+#  Load dataset
 dataset = load_dataset("text", data_files={"train": "verdict.txt"})
 
-# 🔥 Custom Dataset class
+# Custom Dataset class
 class VerdictDataset(Dataset):
     def __init__(self, texts, tokenizer, max_length=512):
         self.inputs = tokenizer(texts, truncation=True, padding="max_length", max_length=max_length, return_tensors="pt")
@@ -24,12 +24,12 @@ class VerdictDataset(Dataset):
     def __getitem__(self, idx):
         return {key: val[idx] for key, val in self.inputs.items()}
 
-# 🔥 Tokenize dataset
+#  Tokenize dataset
 texts = [example["text"] for example in dataset["train"]]
 dataset = VerdictDataset(texts, tokenizer)
 train_dataloader = DataLoader(dataset, batch_size=4, shuffle=True)  # Batch size can be changed based on GPU
 
-# 🔥 Training Setup
+#  Training Setup
 training_args = TrainingArguments(
     output_dir="./results",
     overwrite_output_dir=True,
@@ -48,20 +48,20 @@ trainer = Trainer(
     train_dataset=dataset
 )
 
-# 🔥 Start Fine-Tuning
+#  Start Fine-Tuning
 trainer.train()
 
-# 🔥 Save model & tokenizer after training
+# Save model & tokenizer after training
 model.save_pretrained("gpt2_finetuned_verdict")
 tokenizer.save_pretrained("gpt2_finetuned_verdict")
 
-# 🔥 Load fine-tuned model
+#  Load fine-tuned model
 model = GPT2LMHeadModel.from_pretrained("gpt2_finetuned_verdict")
 model.eval()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model.to(device)
 
-# 🔥 Function to Generate Text
+#  Function to Generate Text
 def generate_text(prompt, max_length=50, temperature=1.0, top_k=50, top_p=0.9):
     input_ids = tokenizer.encode(prompt, return_tensors="pt").to(device)
     output = model.generate(
@@ -74,10 +74,10 @@ def generate_text(prompt, max_length=50, temperature=1.0, top_k=50, top_p=0.9):
     )
     return tokenizer.decode(output[0], skip_special_tokens=True)
 
-# 🔥 Test generation
+#  Test generation
 print(generate_text("The verdict is"))
 
-# 🔥 Flask API for Text Generation
+#  Flask API for Text Generation
 app = Flask(__name__)
 
 @app.route('/generate', methods=['POST'])
